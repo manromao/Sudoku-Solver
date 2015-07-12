@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <cmath>
 
 #define MAX_ROWS 9
 #define MAX_COLS 9
@@ -12,22 +13,51 @@ using namespace std;
 
 class Cell{
 
+
+
 private:
     int value;
+    int illegalValues[MAX_VALUE];
 
 public:
     Cell(){
-        value = 0;
+        initializeAtributtes();
     }
 
     int getValue() const{
         return this->value;
     }
 
-    void setValue (int newValue){
+    bool setValue (int newValue){
+
+        for (int n = 0; n < sizeof(this->illegalValues)/sizeof(*this->illegalValues); ++n) {
+            if (newValue == this->illegalValues[n]) {
+                return false;
+            }
+        }
+
         this->value = newValue;
+        return (true);
     }
 
+    void addIllegalNumber(int illegalNumber){
+        for (int n = 0; n < sizeof(illegalValues)/sizeof(*illegalValues); ++n) {
+            if (illegalValues[n] == 0) {
+                illegalValues[n] = illegalNumber;
+                break; // Last position
+            }
+            else if (illegalValues[n] == illegalNumber) break; // number already there
+
+        }
+
+    }
+
+    void initializeAtributtes(){
+        this->value = 0;
+        for (int n = 0; n < sizeof(this->illegalValues)/sizeof(*this->illegalValues); ++n) {
+                this->illegalValues[n] = 0;
+            }
+    }
 };
 
 typedef Cell grid[MAX_CELLS];
@@ -40,47 +70,69 @@ private:
 
     bool isLegal(int testValue, int currentCell){
 
-        bool isLegal = true;
+        bool isLegal, okRowsAndCols, okSquare;
 
-        int toFirstColum    = currentCell/MAX_COLS;
-        int columnStart     = currentCell - (toFirstColum*MAX_COLS);
+        okRowsAndCols = this->areRowsAndColumnssOk(testValue, currentCell);
+        okSquare = this->isOkSquare(testValue,currentCell);
 
-        int toRowStart      = currentCell%MAX_ROWS;
-        int rowStart        = currentCell - toRowStart;
-
-
-        for (int n = 0; n < MAX_ROWS; ++n) {
-              if (testValue == myGrid[rowStart + n].getValue()){
-                  isLegal = false;
-              }
-
-        }
-
-        for (int n = 0; n < MAX_COLS; ++n) {
-             if (testValue == myGrid[columnStart + (n*MAX_COLS)].getValue()){
-                 isLegal = false;
-             }
-        }
+        if (okRowsAndCols && okSquare) isLegal = true;
 
 
         return (isLegal);
 
     }
 
+    bool areRowsAndColumnssOk(int testValue, int currentCell){
+        bool okFlag = true;
+
+        int toFirstColum    = currentCell / MAX_COLS;
+        int columnStart     = currentCell - (toFirstColum*MAX_COLS);
+
+        int toRowStart      = currentCell % MAX_ROWS;
+        int rowStart        = currentCell - toRowStart;
 
 
-    bool isOkSquare(){
-        return (true);
+        for (int n = 0; n < MAX_ROWS; ++n) {
+              if (testValue == myGrid[rowStart + n].getValue()){
+                  okFlag = false;
+                  break;
+              }
+
+        }
+
+        for (int n = 0; n < MAX_COLS; ++n) {
+             if (testValue == myGrid[columnStart + (n*MAX_COLS)].getValue()){
+                 okFlag = false;
+                 break;
+             }
+        }
+
+        return okFlag;
+    }
+
+      bool isOkSquare  (int testValue, int currentCell){
+
+        // move to the top right corner of square [-deltaX, -deltaY]
+        int deltaX = currentCell % 3;
+        int deltaY = (currentCell / 9) %3;
+
+        int startPosition = (currentCell-deltaX) - deltaY*MAX_COLS;
+
+        // Check values in square
+
+        for (int i = 0; i < sqrt(MAX_VALUE); ++i) {
+            for (int j = 0; j < sqrt(MAX_VALUE); ++j) {
+                if (myGrid[(startPosition + j) + MAX_COLS*i].getValue() == testValue) return (false);
+            }
+        }
+
+       return (true);
     }
 
 
 public:
 
     Game(){}
-
-
-
-    void setGame();
 
     bool hasSolution(){
         return (true);
@@ -91,19 +143,23 @@ public:
 
 
         for (int nCell = 0; nCell < MAX_CELLS; ++nCell) {
+
             for (int testValue = MIN_VALUE; testValue <= MAX_VALUE; ++testValue) {
 
 
                 if (isLegal(testValue,nCell)) {
-                    myGrid[nCell].setValue(testValue);
-                    break;
+                    if (myGrid[nCell].setValue(testValue)) break;
                 }
-                else continue;
+                else
+                    myGrid[nCell].addIllegalNumber(testValue);
 
-                // Insert a value in position
-                // check if value is legal in that position (check rows and columns)
 
-                // next value
+
+                if (testValue == MAX_VALUE){
+                    myGrid[nCell].initializeAtributtes(); // reset the illegalValues list
+                    myGrid[nCell-1].addIllegalNumber(myGrid[nCell-1].getValue()); // Add previous value as illegal
+                    nCell = nCell - 2; // recompute
+                }
             }
         // next position
         }
@@ -118,14 +174,13 @@ public:
 
         for (int nCell = 0; nCell < MAX_CELLS; ++nCell){
 
-
-            int div =  nCell%9;
-            if (div==0)
+            if ((nCell%9)==0)
             {
                 cout << endl;
+
             }
 
-            cout << myGrid[nCell].getValue() << ' ';
+            cout << myGrid[nCell].getValue() << ' ' <<'|' << ' ';
 
         }
 
