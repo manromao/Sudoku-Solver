@@ -16,11 +16,16 @@ class Cell{
 
 
 private:
-    int value;
-    int illegalValues[MAX_VALUE];
+    const int initializedValue;
+    uint value;
+    uint illegalValues[MAX_VALUE];
 
 public:
-    Cell(){
+    explicit Cell(): initializedValue(0) {
+        initializeAtributtes();
+    }
+
+    explicit Cell(const int initializeCellWithValue): initializedValue(initializeCellWithValue) {
         initializeAtributtes();
     }
 
@@ -28,7 +33,7 @@ public:
         return this->value;
     }
 
-    bool setValue (int newValue){
+    bool setValue (uint newValue){
 
         for (int n = 0; n < sizeof(this->illegalValues)/sizeof(*this->illegalValues); ++n) {
             if (newValue == this->illegalValues[n]) {
@@ -40,7 +45,7 @@ public:
         return (true);
     }
 
-    void addIllegalNumber(int illegalNumber){
+    void addIllegalNumber(uint illegalNumber){
         for (int n = 0; n < sizeof(illegalValues)/sizeof(*illegalValues); ++n) {
             if (illegalValues[n] == 0) {
                 illegalValues[n] = illegalNumber;
@@ -60,10 +65,76 @@ public:
     }
 };
 
+
+
 typedef Cell grid[MAX_CELLS];
-
-
 class Game {
+
+public:
+
+
+    Game(): myGrid(initializerList()){
+        cout << "breakpoint" << endl; // cells already created at this point
+    }
+
+
+    bool hasSolution(){
+        return (true);
+    }
+
+    bool solveGame(){
+        cout << "Solving the game" << endl;
+
+
+        for (int nCell = 0; nCell < MAX_CELLS; ++nCell) {
+
+            for (int testValue = MIN_VALUE; testValue <= MAX_VALUE; ++testValue) {
+
+
+                if (isLegal(testValue,nCell)) {
+                    if (myGrid[nCell].setValue(testValue)) break;
+                }
+                else
+                    myGrid[nCell].addIllegalNumber(testValue);
+
+
+
+                if (testValue == MAX_VALUE){
+                    myGrid[nCell].initializeAtributtes(); // reset the illegalValues list
+                    myGrid[nCell-1].addIllegalNumber(myGrid[nCell-1].getValue()); // Add previous value as illegal
+                    nCell = nCell - 2; // recompute
+                }
+            }
+        // next position
+        }
+
+
+
+        cout << "¡Solved!" << endl;
+        return EXIT_SUCCESS;
+    }
+
+    void printGame(){
+
+        for (int nCell = 0; nCell < MAX_CELLS; ++nCell){
+
+            if ((nCell%9)==0)
+            {
+                cout << endl;
+
+            }
+
+            cout << myGrid[nCell].getValue() << ' ' <<'|' << ' ';
+
+        }
+
+    }
+
+    grid* getGrid(){
+        return (&this->myGrid);
+    }
+
+    void setGrid(){}
 
 private:
     grid myGrid;
@@ -130,67 +201,7 @@ private:
     }
 
 
-public:
 
-    Game(){}
-
-    bool hasSolution(){
-        return (true);
-    }
-
-    bool solveGame(){
-        cout << "Solving the game" << endl;
-
-
-        for (int nCell = 0; nCell < MAX_CELLS; ++nCell) {
-
-            for (int testValue = MIN_VALUE; testValue <= MAX_VALUE; ++testValue) {
-
-
-                if (isLegal(testValue,nCell)) {
-                    if (myGrid[nCell].setValue(testValue)) break;
-                }
-                else
-                    myGrid[nCell].addIllegalNumber(testValue);
-
-
-
-                if (testValue == MAX_VALUE){
-                    myGrid[nCell].initializeAtributtes(); // reset the illegalValues list
-                    myGrid[nCell-1].addIllegalNumber(myGrid[nCell-1].getValue()); // Add previous value as illegal
-                    nCell = nCell - 2; // recompute
-                }
-            }
-        // next position
-        }
-
-
-
-        cout << "¡Solved!" << endl;
-        return EXIT_SUCCESS;
-    }
-
-    void printGame(){
-
-        for (int nCell = 0; nCell < MAX_CELLS; ++nCell){
-
-            if ((nCell%9)==0)
-            {
-                cout << endl;
-
-            }
-
-            cout << myGrid[nCell].getValue() << ' ' <<'|' << ' ';
-
-        }
-
-    }
-
-    grid* getGrid(){
-        return (&this->myGrid);
-    }
-
-    void setGrid(){}
 
 
 };
